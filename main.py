@@ -30,6 +30,24 @@ rock_imgs = []
 for i in range(7):
     rock_imgs.append(pygame.image.load(os.path.join('img', f'rock{i}.png')).convert())
     
+expl_anim = {}
+
+# 大爆炸
+expl_anim['lg'] = []
+
+# 小爆炸
+expl_anim['sm'] = []
+
+for i in range(9):
+    expl_img = pygame.image.load(os.path.join('img', f'expl{i}.png')).convert()
+    
+    # 圖片背景透明化
+    expl_img.set_colorkey(BLACK)
+    
+    # 調整圖片大小
+    expl_anim['lg'].append(pygame.transform.scale(expl_img, (75, 75)))
+    expl_anim['sm'].append(pygame.transform.scale(expl_img, (30, 30)))
+    
 # 載入音樂
 shoot_sound = pygame.mixer.Sound(os.path.join('sound', 'shoot.wav'))
 
@@ -96,6 +114,8 @@ def new_rock():
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
+        
+        # 調整圖片大小
         self.image = pygame.transform.scale(player_img, (50, 38))
         
         # 圖片背景透明化
@@ -221,6 +241,50 @@ class Bullet(pygame.sprite.Sprite):
             self.kill()
 
 
+# 爆炸 sprite
+class Explosion(pygame.sprite.Sprite):
+    def __init__(self, center, size):
+        pygame.sprite.Sprite.__init__(self)
+        self.size = size
+        self.image = expl_anim[self.size][0]
+        
+        # 定位圖片
+        self.rect = self.image.get_rect()
+        self.rect.center = center
+        
+        # 更新圖片張數
+        self.frame = 0
+        
+        # 更新圖片時間(從初始化到現在經過時間(毫秒))
+        self.last_update = pygame.time.get_ticks()
+        
+        # 更新圖片時間間隔(毫秒)
+        self.frame_rate = 50
+        
+    def update(self):
+        
+        # 現在時間
+        now = pygame.time.get_ticks()
+        
+        # 判斷(現在時間 - 最後一次圖片更新時間)是否大於更新圖片時間間隔
+        if now - self.last_update > self.frame_rate:
+            self.last_update = now
+            self.frame += 1
+            
+            if self.frame == len(expl_anim[self.size]):
+                
+                # 刪除圖片
+                self.kill()
+                
+            else:
+                self.image = expl_anim[self.size][self.frame]
+                center = self.rect.center
+                
+                # 定位圖片
+                self.rect = self.image.get_rect()
+                self.rect.center = center
+
+
 all_sprites = pygame.sprite.Group()
 rocks = pygame.sprite.Group()
 bullets = pygame.sprite.Group()
@@ -269,6 +333,11 @@ while running:
         random.choice(expl_sounds).play()
         score += hit.radius
         
+        # 爆炸動畫
+        expl = Explosion(hit.rect.center, 'lg')
+        
+        all_sprites.add(expl)
+        
         # 創建石頭
         new_rock()
     
@@ -284,6 +353,11 @@ while running:
         
         # 減少生命值
         player.health -= hit.radius
+        
+        # 爆炸動畫
+        expl = Explosion(hit.rect.center, 'sm')
+        
+        all_sprites.add(expl)
         
         if player.health <= 0:
             running = False
