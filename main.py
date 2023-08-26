@@ -63,6 +63,34 @@ def draw_text(surf, text, size, x, y):
     # 畫出文字
     surf.blit(text_surface, text_rect)
     
+# 生命條畫入畫面
+def draw_health(surf, hp, x, y):
+    if hp <= 0:
+        hp = 0
+    
+    BAR_LENGTH = 100
+    BAR_HEIGHT = 10
+    
+    # 剩餘生命
+    fill = (hp / 100) * BAR_LENGTH
+    
+    # 生命條
+    fill_rect = pygame.Rect(x, y, fill, BAR_HEIGHT)
+    
+    # 生命條外框
+    outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
+    
+    # 畫出生命條
+    pygame.draw.rect(surf, GREEN, fill_rect)
+    
+    # 畫出生命條外框
+    pygame.draw.rect(surf, WHITE, outline_rect, 2)
+
+# 創建石頭
+def new_rock():
+    r = Rock()
+    all_sprites.add(r)
+    rocks.add(r)
 
 # 操控 sprite
 class Player(pygame.sprite.Sprite):
@@ -82,6 +110,9 @@ class Player(pygame.sprite.Sprite):
         self.rect.centerx = WIDTH / 2
         self.rect.bottom = HEIGHT - 10
         self.speedx = 8
+        
+        # 生命值
+        self.health = 100
 
     def update(self):
         key_pressed = pygame.key.get_pressed()
@@ -198,9 +229,9 @@ player = Player()
 all_sprites.add(player)
 
 for _ in range(8):
-    rock = Rock()
-    all_sprites.add(rock)
-    rocks.add(rock)
+    
+    # 創建石頭
+    new_rock()
     
 # 分數
 score = 0
@@ -239,17 +270,23 @@ while running:
         score += hit.radius
         
         # 創建石頭
-        r = Rock()
-        all_sprites.add(r)
-        rocks.add(r)
+        new_rock()
     
     # player & rocks 碰撞處理
     # 加強碰撞判斷(矩形 -> 圓形)
-    hits = pygame.sprite.spritecollide(player, rocks, False, pygame.sprite.collide_circle)
+    hits = pygame.sprite.spritecollide(player, rocks, True, pygame.sprite.collide_circle)
     
     # 判斷飛船 & 石頭是否碰撞
-    if hits:
-        running = False
+    for hit in hits:
+        
+        # 創建石頭
+        new_rock()
+        
+        # 減少生命值
+        player.health -= hit.radius
+        
+        if player.health <= 0:
+            running = False
     
     # 畫面顯示
     screen.fill(BLACK)
@@ -259,8 +296,11 @@ while running:
     
     all_sprites.draw(screen)
     
-    # 顯示文字
+    # 顯示分數
     draw_text(screen, str(score), 18, WIDTH / 2, 10)
+    
+    # 顯示生命條
+    draw_health(screen, player.health, 5, 15)
     
     pygame.display.update()
     
