@@ -15,6 +15,7 @@ YELLOW = (255, 255, 0)
 
 # 遊戲初始化 and 創建視窗
 pygame.init()
+pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('第一個遊戲')
 clock = pygame.time.Clock()
@@ -28,6 +29,19 @@ rock_imgs = []
 
 for i in range(7):
     rock_imgs.append(pygame.image.load(os.path.join('img', f'rock{i}.png')).convert())
+    
+# 載入音樂
+shoot_sound = pygame.mixer.Sound(os.path.join('sound', 'shoot.wav'))
+
+expl_sounds = [
+    pygame.mixer.Sound(os.path.join('sound', 'expl0.wav')),
+    pygame.mixer.Sound(os.path.join('sound', 'expl1.wav'))
+]
+
+pygame.mixer.music.load(os.path.join('sound', 'background.ogg'))
+
+# 調整背景音樂音量
+pygame.mixer.music.set_volume(0.4)
 
 # 載入字體
 font_name = pygame.font.match_font('arial')
@@ -35,7 +49,7 @@ font_name = pygame.font.match_font('arial')
 # 文字寫入畫面
 def draw_text(surf, text, size, x, y):
     
-    # 創建文字
+    # 創建文字物件
     font = pygame.font.Font(font_name, size)
     
     # 渲染文字
@@ -91,6 +105,7 @@ class Player(pygame.sprite.Sprite):
         bullet = Bullet(self.rect.centerx, self.rect.top)
         all_sprites.add(bullet)
         bullets.add(bullet)
+        shoot_sound.play()
 
 
 # 石頭 sprite
@@ -190,6 +205,9 @@ for _ in range(8):
 # 分數
 score = 0
 
+# 播放背景音樂(無限重複播放)
+pygame.mixer.music.play(-1)
+
 running = True
 
 # 遊戲迴圈
@@ -217,6 +235,7 @@ while running:
     
     # 判斷石頭 & 子彈是否碰撞
     for hit in hits:
+        random.choice(expl_sounds).play()
         score += hit.radius
         
         # 創建石頭
