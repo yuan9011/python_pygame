@@ -2,10 +2,14 @@ import pygame
 import random
 import os
 
-FPS = 60
+# --------------------------------------------------
+# 遊戲畫面長寬
+# 遊戲畫面幀數
 WIDTH = 500
 HEIGHT = 600
+FPS = 60
 
+# --------------------------------------------------
 # 顏色
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -13,82 +17,93 @@ GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
 
-# 遊戲初始化 and 創建視窗
+# --------------------------------------------------
+# 遊戲初始化
+# 創建視窗
 pygame.init()
 pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption('第一個遊戲')
+pygame.display.set_caption('太空生存戰')
 clock = pygame.time.Clock()
 
+# --------------------------------------------------
 # 載入圖片
+# 圖片背景透明化
+# 調整圖片大小
 background_img = pygame.image.load(os.path.join('img', 'background.png')).convert()
 player_img = pygame.image.load(os.path.join('img', 'player.png')).convert()
 bullet_img = pygame.image.load(os.path.join('img', 'bullet.png')).convert()
 
-# 小飛船圖片 & 圖片背景透明化
+player_img.set_colorkey(BLACK)
+bullet_img.set_colorkey(BLACK)
+
 player_mini_img = pygame.transform.scale(player_img, (25, 19))
-player_mini_img.set_colorkey(BLACK)
 
 rock_imgs = []
 
 for i in range(7):
-    rock_imgs.append(pygame.image.load(os.path.join('img', f'rock{i}.png')).convert())
+    rock_img = pygame.image.load(os.path.join('img', f'rock{i}.png')).convert()
+    rock_img.set_colorkey(BLACK)
+    rock_imgs.append(rock_img)
     
 expl_anim = {}
 
 # 大爆炸
-expl_anim['lg'] = []
-
 # 小爆炸
-expl_anim['sm'] = []
-
 # 飛船爆炸
+expl_anim['lg'] = []
+expl_anim['sm'] = []
 expl_anim['player'] = []
 
 for i in range(9):
     expl_img = pygame.image.load(os.path.join('img', f'expl{i}.png')).convert()
     player_expl_img = pygame.image.load(os.path.join('img', f'player_expl{i}.png')).convert()
     
-    # 圖片背景透明化
     expl_img.set_colorkey(BLACK)
     player_expl_img.set_colorkey(BLACK)
     
-    # 調整圖片大小
     expl_anim['lg'].append(pygame.transform.scale(expl_img, (75, 75)))
     expl_anim['sm'].append(pygame.transform.scale(expl_img, (30, 30)))
-    
     expl_anim['player'].append(player_expl_img)
     
 power_imgs = {}
 power_imgs['shield'] = pygame.image.load(os.path.join('img', 'shield.png')).convert()
 power_imgs['gun'] = pygame.image.load(os.path.join('img', 'gun.png')).convert()
-    
+
+# --------------------------------------------------
 # 載入音樂
+# 調整音樂音量
 shoot_sound = pygame.mixer.Sound(os.path.join('sound', 'shoot.wav'))
 gun_sound = pygame.mixer.Sound(os.path.join('sound', 'pow1.wav'))
 shield_sound = pygame.mixer.Sound(os.path.join('sound', 'pow0.wav'))
 die_sound = pygame.mixer.Sound(os.path.join('sound', 'rumble.ogg'))
+
+shoot_sound.set_volume(0.1)
+gun_sound.set_volume(0.1)
+shield_sound.set_volume(0.1)
+die_sound.set_volume(0.1)
 
 expl_sounds = [
     pygame.mixer.Sound(os.path.join('sound', 'expl0.wav')),
     pygame.mixer.Sound(os.path.join('sound', 'expl1.wav'))
 ]
 
+# 背景音樂
 pygame.mixer.music.load(os.path.join('sound', 'background.ogg'))
+pygame.mixer.music.set_volume(0.1)
 
-# 調整背景音樂音量
-pygame.mixer.music.set_volume(0.4)
-
+# --------------------------------------------------
 # 載入字體
-font_name = pygame.font.match_font('arial')
+font_name = os.path.join('font.ttf')
 
+# --------------------------------------------------
 # 文字寫入畫面
 def draw_text(surf, text, size, x, y):
     
     # 創建文字物件
     font = pygame.font.Font(font_name, size)
     
-    # 渲染文字
+    # 渲染文字(反鋸齒antialias : 邊緣柔化)
     text_surface = font.render(text, True, WHITE)
     
     # 定位文字
@@ -104,23 +119,22 @@ def draw_health(surf, hp, x, y):
     if hp <= 0:
         hp = 0
     
+    # 生命條長寬
     BAR_LENGTH = 100
     BAR_HEIGHT = 10
     
     # 剩餘生命
     fill = (hp / 100) * BAR_LENGTH
     
-    # 生命條
+    # 生命條(矩形)
+    # 生命條外框(矩形)
     fill_rect = pygame.Rect(x, y, fill, BAR_HEIGHT)
-    
-    # 生命條外框
     outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
     
     # 畫出生命條
-    pygame.draw.rect(surf, GREEN, fill_rect)
-    
     # 畫出生命條外框
-    pygame.draw.rect(surf, WHITE, outline_rect, 2)
+    pygame.draw.rect(surf, GREEN, fill_rect)
+    pygame.draw.rect(surf, WHITE, outline_rect, 4)
 
 # 血條畫入畫面
 def draw_lives(surf, lives, img, x, y):
@@ -141,6 +155,36 @@ def new_rock():
     all_sprites.add(r)
     rocks.add(r)
 
+# 初始畫面
+def draw_init():
+    
+    # 畫面背景
+    screen.blit(background_img, (0, 0))
+    
+    # 畫面文字
+    draw_text(screen, '太空生存戰', 64, WIDTH / 2, HEIGHT / 4)
+    draw_text(screen, '← → 移動飛船 空白鍵發射子彈', 22, WIDTH / 2, HEIGHT / 2)
+    draw_text(screen, '按任意鍵開始遊戲', 18, WIDTH / 2, HEIGHT * 3 / 4)
+    
+    pygame.display.update()
+    
+    waiting = True
+    
+    while waiting:
+        
+        # 一秒鐘迴圈執行次數
+        clock.tick(FPS)
+    
+        # 取得輸入
+        for event in pygame.event.get():
+            
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            
+            # 判斷是否按下鍵盤鍵
+            elif event.type == pygame.KEYUP:
+                waiting = False
+        
 # 操控 sprite
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -148,9 +192,6 @@ class Player(pygame.sprite.Sprite):
         
         # 調整圖片大小
         self.image = pygame.transform.scale(player_img, (50, 38))
-        
-        # 圖片背景透明化
-        self.image.set_colorkey(BLACK)
         
         # 定位圖片
         self.rect = self.image.get_rect()
@@ -198,10 +239,10 @@ class Player(pygame.sprite.Sprite):
             
         key_pressed = pygame.key.get_pressed()
         
-        if key_pressed[pygame.K_a]:
+        if key_pressed[pygame.K_LEFT]:
             self.rect.x -= self.speedx
         
-        if key_pressed[pygame.K_d]:
+        if key_pressed[pygame.K_RIGHT]:
             self.rect.x += self.speedx
         
         # 判斷圖片是否超出畫面
@@ -259,10 +300,6 @@ class Rock(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.image_ori = random.choice(rock_imgs)
-        
-        # 圖片背景透明化
-        self.image_ori.set_colorkey(BLACK)
-        
         self.image = self.image_ori.copy()
         
         # 定位圖片
@@ -315,9 +352,6 @@ class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
         self.image = bullet_img
-        
-        # 圖片背景透明化
-        self.image.set_colorkey(BLACK)
         
         # 定位圖片
         self.rect = self.image.get_rect()
@@ -410,30 +444,38 @@ class Power(pygame.sprite.Sprite):
             self.kill()
 
 
-# 群組 sprite
-all_sprites = pygame.sprite.Group()
-rocks = pygame.sprite.Group()
-bullets = pygame.sprite.Group()
-powers = pygame.sprite.Group()
-
-player = Player()
-all_sprites.add(player)
-
-for _ in range(8):
-    
-    # 創建石頭
-    new_rock()
-    
-# 分數
-score = 0
-
 # 播放背景音樂(無限重複播放)
 pygame.mixer.music.play(-1)
 
+show_init = True
 running = True
 
 # 遊戲迴圈
 while running:
+    
+    # 顯示初始畫面
+    if show_init:
+        draw_init()
+        show_init = False
+        
+        # 群組 sprite
+        all_sprites = pygame.sprite.Group()
+        rocks = pygame.sprite.Group()
+        bullets = pygame.sprite.Group()
+        powers = pygame.sprite.Group()
+
+        player = Player()
+        all_sprites.add(player)
+
+        for _ in range(8):
+            
+            # 創建石頭
+            new_rock()
+            
+        # 分數
+        score = 0
+    
+    # 一秒鐘迴圈執行次數
     clock.tick(FPS)
     
     # 取得輸入
@@ -457,7 +499,9 @@ while running:
     
     # 判斷石頭 & 子彈是否碰撞
     for hit in hits:
-        random.choice(expl_sounds).play()
+        expl_sound = random.choice(expl_sounds)
+        expl_sound.set_volume(0.1)
+        expl_sound.play()
         score += hit.radius
         
         # 大爆炸動畫
@@ -506,7 +550,7 @@ while running:
     
     # 判斷血條是否歸零 & 飛船爆炸動畫是否存在
     if player.lives == 0 and not death_expl.alive():
-        running = False
+        show_init = True
     
     # player & powers 碰撞處理
     hits = pygame.sprite.spritecollide(player, powers, True)
