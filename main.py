@@ -116,7 +116,9 @@ def draw_text(surf, text, size, x, y):
     
 # 生命條畫入畫面
 def draw_health(surf, hp, x, y):
-    if hp <= 0:
+    
+    # 判斷生命是否小於 0
+    if hp < 0:
         hp = 0
     
     # 生命條長寬
@@ -132,11 +134,11 @@ def draw_health(surf, hp, x, y):
     outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
     
     # 畫出生命條
-    # 畫出生命條外框
+    # 畫出生命條外框(外框粗細為 2)
     pygame.draw.rect(surf, GREEN, fill_rect)
-    pygame.draw.rect(surf, WHITE, outline_rect, 4)
+    pygame.draw.rect(surf, WHITE, outline_rect, 2)
 
-# 血條畫入畫面
+# 血條畫入畫面(小飛機圖片)
 def draw_lives(surf, lives, img, x, y):
     
     for i in range(lives):
@@ -166,6 +168,7 @@ def draw_init():
     draw_text(screen, '← → 移動飛船 空白鍵發射子彈', 22, WIDTH / 2, HEIGHT / 2)
     draw_text(screen, '按任意鍵開始遊戲', 18, WIDTH / 2, HEIGHT * 3 / 4)
     
+    # 更新內容顯示到畫面上
     pygame.display.update()
     
     waiting = True
@@ -181,10 +184,11 @@ def draw_init():
             if event.type == pygame.QUIT:
                 pygame.quit()
             
-            # 判斷是否按下鍵盤鍵
+            # 判斷是否按下鍵盤鍵(按下並鬆開)
             elif event.type == pygame.KEYUP:
                 waiting = False
         
+# --------------------------------------------------
 # 操控 sprite
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -261,6 +265,7 @@ class Player(pygame.sprite.Sprite):
             if self.gun == 1:
         
                 # 創建子彈
+                # 播放子彈音樂
                 bullet = Bullet(self.rect.centerx, self.rect.top)
                 all_sprites.add(bullet)
                 bullets.add(bullet)
@@ -269,19 +274,21 @@ class Player(pygame.sprite.Sprite):
             elif self.gun >= 2:
                 
                 # 創建子彈 * 2
+                # 播放子彈音樂
                 bullet1 = Bullet(self.rect.left, self.rect.centery)
                 bullet2 = Bullet(self.rect.right, self.rect.centery)
+                
                 all_sprites.add(bullet1)
                 all_sprites.add(bullet2)
                 bullets.add(bullet1)
                 bullets.add(bullet2)
-                shoot_sound.play()
                 
-        
+                shoot_sound.play()
+                 
     def hide(self):
         self.hidden = True
         
-        # 圖片隱藏時間
+        # 紀錄圖片隱藏開始時間
         self.hide_time = pygame.time.get_ticks()
         
         # 圖片定位在畫面外
@@ -290,7 +297,7 @@ class Player(pygame.sprite.Sprite):
     def gunup(self):
         
         # 子彈等級提升
-        # 子彈等級提升時間
+        # 紀錄子彈等級提升開始時間
         self.gun += 1
         self.gun_time = pygame.time.get_ticks()
 
@@ -304,21 +311,25 @@ class Rock(pygame.sprite.Sprite):
         
         # 定位圖片
         self.rect = self.image.get_rect()
+        self.rect.x = random.randrange(0, WIDTH - self.rect.width)
+        self.rect.y = random.randrange(-180, -100)
         
         # 以圖片中心點畫一個圓
         self.radius = int(self.rect.width * 0.85 / 2)
         
-        self.rect.x = random.randrange(0, WIDTH - self.rect.width)
-        self.rect.y = random.randrange(-180, -100)
+        # 圖片移動速度
         self.speedx = random.randrange(-3, 3)
         self.speedy = random.randrange(2, 5)
         
         # 總轉動度數
+        # 轉動度數
         self.total_degree = 0
-        
         self.rot_degree = random.randrange(-3, 3)
         
     def rotate(self):
+        
+        # 轉動度數
+        # 轉動圖片
         self.total_degree += self.rot_degree
         self.total_degree %= 360
         self.image = pygame.transform.rotate(self.image_ori, self.total_degree)
@@ -340,7 +351,7 @@ class Rock(pygame.sprite.Sprite):
             or self.rect.left > WIDTH \
             or self.rect.right < 0:
             
-            # 重置圖片
+            # 重置圖片(位置 & 移動速度)
             self.rect.x = random.randrange(0, WIDTH - self.rect.width)
             self.rect.y = random.randrange(-100, -40)
             self.speedx = random.randrange(-3, 3)
@@ -355,9 +366,10 @@ class Bullet(pygame.sprite.Sprite):
         
         # 定位圖片
         self.rect = self.image.get_rect()
-        
         self.rect.centerx = x
         self.rect.y = y
+        
+        # 圖片移動速度
         self.speedy = -10
         
     def update(self):
@@ -382,12 +394,10 @@ class Explosion(pygame.sprite.Sprite):
         self.rect.center = center
         
         # 更新圖片張數
-        self.frame = 0
-        
-        # 更新圖片時間(從初始化到現在經過時間(毫秒))
-        self.last_update = pygame.time.get_ticks()
-        
+        # 紀錄更新圖片開始時間
         # 更新圖片時間間隔(毫秒)
+        self.frame = 0
+        self.last_update = pygame.time.get_ticks()
         self.frame_rate = 50
         
     def update(self):
@@ -400,6 +410,7 @@ class Explosion(pygame.sprite.Sprite):
             self.last_update = now
             self.frame += 1
             
+            # 判斷圖片更新張數是否為最後一張
             if self.frame == len(expl_anim[self.size]):
                 
                 # 刪除圖片
@@ -420,7 +431,7 @@ class Power(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         
         # 隨機選取掉寶種類
-        self.type = random.choice(['shield', 'gun'])
+        self.type = random.choice(list(power_imgs.keys()))
         
         self.image = power_imgs[self.type]
         
@@ -444,13 +455,15 @@ class Power(pygame.sprite.Sprite):
             self.kill()
 
 
+# --------------------------------------------------
 # 播放背景音樂(無限重複播放)
 pygame.mixer.music.play(-1)
 
+# --------------------------------------------------
+# 遊戲迴圈
 show_init = True
 running = True
 
-# 遊戲迴圈
 while running:
     
     # 顯示初始畫面
@@ -464,12 +477,12 @@ while running:
         bullets = pygame.sprite.Group()
         powers = pygame.sprite.Group()
 
+        # 創建飛船
         player = Player()
         all_sprites.add(player)
 
+        # 創建石頭 * 8
         for _ in range(8):
-            
-            # 創建石頭
             new_rock()
             
         # 分數
@@ -494,14 +507,20 @@ while running:
     # 更新遊戲
     all_sprites.update()
     
-    # rocks & bullets 碰撞處理
+    # rocks & bullets 碰撞處理(碰撞後刪除)
     hits = pygame.sprite.groupcollide(rocks, bullets, True, True)
     
     # 判斷石頭 & 子彈是否碰撞
     for hit in hits:
+        
+        # 隨機選取爆炸音樂
+        # 調整音樂音量
+        # 播放音樂
         expl_sound = random.choice(expl_sounds)
         expl_sound.set_volume(0.1)
         expl_sound.play()
+        
+        # 更新分數
         score += hit.radius
         
         # 大爆炸動畫
@@ -510,21 +529,23 @@ while running:
         
         # 掉寶率為 10 %
         if random.random() > 0.9:
+            
+            # 創建寶物
             pow = Power(hit.rect.center)
             all_sprites.add(pow)
             powers.add(pow)
         
-        # 創建石頭
+        # 重新創建石頭
         new_rock()
     
-    # player & rocks 碰撞處理
+    # player & rocks 碰撞處理(rocks 碰撞後刪除)
     # 加強碰撞判斷(矩形 -> 圓形)
     hits = pygame.sprite.spritecollide(player, rocks, True, pygame.sprite.collide_circle)
     
     # 判斷飛船 & 石頭是否碰撞
     for hit in hits:
         
-        # 創建石頭
+        # 重新創建石頭
         new_rock()
         
         # 減少生命值
@@ -534,6 +555,7 @@ while running:
         expl = Explosion(hit.rect.center, 'sm')
         all_sprites.add(expl)
         
+        # 判斷生命值是否小於等於 0
         if player.health <= 0:
             
             # 飛船爆炸動畫 & 音樂
@@ -541,18 +563,22 @@ while running:
             all_sprites.add(death_expl)
             die_sound.play()
             
+            # 減少血條
             player.lives -= 1
             
             # 刷新生命值
             player.health = 100
             
+            # 隱藏飛船
             player.hide()
     
     # 判斷血條是否歸零 & 飛船爆炸動畫是否存在
     if player.lives == 0 and not death_expl.alive():
+        
+        # 顯示初始畫面
         show_init = True
     
-    # player & powers 碰撞處理
+    # player & powers 碰撞處理(powers 碰撞後刪除)
     hits = pygame.sprite.spritecollide(player, powers, True)
     
     # 判斷飛船 & 寶物是否碰撞
@@ -560,23 +586,30 @@ while running:
         
         # 判斷寶物種類
         if hit.type == 'shield':
+            
+            # 增加生命值
             player.health += 20
             
             # 判斷生命值是否大於 100
             if player.health > 100:
                 player.health = 100
                 
-            gun_sound.play()
+            # 播放音樂
+            shield_sound.play()
                 
         elif hit.type == 'gun':
+            
+            # 子彈等級提升
             player.gunup()
-            shield_sound.play()
+            
+            # 播放音樂
+            gun_sound.play()
     
     # 畫面顯示
-    screen.fill(BLACK)
+    #screen.fill(BLACK)
     
     # 畫面背景
-    screen.blit(background_img, (0, 0))
+    #screen.blit(background_img, (0, 0))
     
     all_sprites.draw(screen)
     
@@ -585,6 +618,7 @@ while running:
     draw_health(screen, player.health, 5, 15)
     draw_lives(screen, player.lives, player_mini_img, WIDTH - 100, 15)
     
+    # 更新內容顯示到畫面上
     pygame.display.update()
     
 pygame.quit()
