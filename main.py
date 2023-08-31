@@ -606,11 +606,11 @@ while running:
             gun_sound.play()
     
     # 畫面顯示
-    #screen.fill(BLACK)
-    
     # 畫面背景
-    #screen.blit(background_img, (0, 0))
+    screen.fill(BLACK)
+    screen.blit(background_img, (0, 0))
     
+    # 畫出 sprites 群組
     all_sprites.draw(screen)
     
     # 顯示分數 & 生命條 & 血條
