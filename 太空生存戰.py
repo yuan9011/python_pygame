@@ -39,6 +39,9 @@ bullet_img.set_colorkey(BLACK)
 
 player_mini_img = pygame.transform.scale(player_img, (25, 19))
 
+# 設定遊戲標題圖片
+pygame.display.set_icon(player_mini_img)
+
 rock_imgs = []
 
 for i in range(7):
@@ -183,10 +186,12 @@ def draw_init():
             
             if event.type == pygame.QUIT:
                 pygame.quit()
+                return True
             
             # 判斷是否按下鍵盤鍵(按下並鬆開)
             elif event.type == pygame.KEYUP:
                 waiting = False
+                return False
         
 # --------------------------------------------------
 # 操控 sprite
@@ -468,7 +473,12 @@ while running:
     
     # 顯示初始畫面
     if show_init:
-        draw_init()
+        colse = draw_init()
+        
+        # 判斷是否關閉初始畫面
+        if colse:
+            break
+        
         show_init = False
         
         # 群組 sprite
