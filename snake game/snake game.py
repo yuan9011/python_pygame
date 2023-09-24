@@ -4,13 +4,6 @@ import random
 from pygame.math import Vector2
 
 # --------------------------------------------------
-# 遊戲畫面長寬
-# 遊戲畫面幀數
-WIDTH = 400
-HEIGHT = 500
-FPS = 60
-
-# --------------------------------------------------
 class SNAKE:
   def __init__(self):
     
@@ -170,6 +163,8 @@ class SNAKE:
     self.new_block = True
 
   def play_crunch_sound(self):
+    
+    # 播放音樂
     self.crunch_sound.play()
 
   def reset(self):
@@ -222,6 +217,9 @@ class MAIN:
     self.fruit = FRUIT()
     self.snake = SNAKE()
     
+    # 顯示初始畫面
+    self.show_init = True
+    
   def update(self):
     
     # 蛇移動
@@ -269,13 +267,21 @@ class MAIN:
     if not 0 <= self.snake.body[0].x < cell_number or \
       not 0 <= self.snake.body[0].y < cell_number:
         
+      # 顯示初始畫面
+      self.show_init = True
+      
       # 結束遊戲
       self.game_over()
         
     for block in self.snake.body[1:]:
-      
+        
       # 判斷蛇是否碰觸自己本身
       if block == self.snake.body[0]:
+        
+        if len(self.snake.body) > 3:
+          
+          # 顯示初始畫面
+          self.show_init = True
         
         # 結束遊戲
         self.game_over()
@@ -310,7 +316,7 @@ class MAIN:
     
     # 定位文字
     score_x = int(cell_size * cell_number - 60)
-    score_y = int(cell_size * cell_number - 30)
+    score_y = int(30)
     score_rect = score_surface.get_rect(center=(score_x, score_y))
     apple_rect = self.fruit.image.get_rect(midright=(score_rect.left, score_rect.centery))
     bg_rect = pygame.Rect(apple_rect.left, apple_rect.top, apple_rect.width + score_rect.width + 6, apple_rect.height)
@@ -324,6 +330,57 @@ class MAIN:
     screen.blit(score_surface, score_rect)
     screen.blit(self.fruit.image, apple_rect)
 
+  def draw_init(self):
+    
+    # 畫面顯示顏色
+    screen.fill((175, 215, 70))
+    self.draw_grass()
+    
+    # 畫面文字
+    WIDTH = int(cell_size * cell_number)
+    HEIGHT = int(cell_size * cell_number)
+    self.draw_text(screen, 'SNAKE GAME', 64, WIDTH / 2, HEIGHT / 4)
+    self.draw_text(screen, '←↑→↓ Move snake', 24, WIDTH / 2, HEIGHT / 2)
+    self.draw_text(screen, 'Press any key to start', 18, WIDTH / 2, HEIGHT * 3 / 4)
+    
+    # 更新內容顯示到畫面上
+    pygame.display.update()
+    
+    waiting = True
+    
+    while waiting:
+        
+      # 一秒鐘迴圈執行次數
+      clock.tick(FPS)
+    
+      # 取得輸入
+      for event in pygame.event.get():
+        
+        if event.type == pygame.QUIT:
+          pygame.quit()
+          return True
+        
+        # 判斷是否按下鍵盤鍵(按下並鬆開)
+        elif event.type == pygame.KEYUP:
+          waiting = False
+          return False
+
+  def draw_text(self, surf, text, size, x, y):
+    
+    # 創建文字物件
+    text_font = pygame.font.Font('font/font.ttf', size)
+    
+    # 渲染文字(反鋸齒antialias : 邊緣柔化)
+    text_surface = text_font.render(text, True, (54, 74, 12))
+    
+    # 定位文字
+    text_rect = text_surface.get_rect()
+    text_rect.centerx = x
+    text_rect.centery = y
+    
+    # 畫出文字
+    surf.blit(text_surface, text_rect)
+
 # --------------------------------------------------
 # 遊戲初始化
 # 創建視窗
@@ -331,7 +388,9 @@ pygame.init()
 pygame.mixer.init()
 cell_size = 30
 cell_number = 20
+FPS = 60
 screen = pygame.display.set_mode((cell_number * cell_size, cell_number * cell_size))
+pygame.display.set_caption('snake game')
 clock = pygame.time.Clock()
 
 # 載入字體
@@ -351,41 +410,51 @@ while True:
   # 一秒鐘迴圈執行次數
   clock.tick(FPS)
   
+  # 顯示初始畫面
+  if main_game.show_init:
+    colse = main_game.draw_init()
+    
+    # 判斷是否關閉初始畫面
+    if colse:
+      break
+      
+    main_game.show_init = False
+  
   # 取得輸入
   for event in pygame.event.get():
+    
+    # 判斷是否關閉遊戲
+    if event.type == pygame.QUIT:
+        
+      # 關閉遊戲
+      pygame.quit()
+      sys.exit()
+    
+    # 判斷事件
+    if event.type == SCREEN_UPDATE:
       
-      # 判斷是否關閉遊戲
-      if event.type == pygame.QUIT:
-          
-          # 關閉遊戲
-          pygame.quit()
-          sys.exit()
+      # 更新內容
+      main_game.update()
       
-      # 判斷事件
-      if event.type == SCREEN_UPDATE:
+    # 判斷是否按下鍵盤鍵
+    if event.type == pygame.KEYDOWN:
+      
+      # 蛇移動方向改變(上下左右)
+      if event.key == pygame.K_UP:
+        if main_game.snake.direction.y != 1:
+          main_game.snake.direction = Vector2(0, -1)
+      
+      if event.key == pygame.K_RIGHT:
+        if main_game.snake.direction.x != -1:
+          main_game.snake.direction = Vector2(1, 0)
         
-        # 更新內容
-        main_game.update()
+      if event.key == pygame.K_DOWN:
+        if main_game.snake.direction.y != -1:
+          main_game.snake.direction = Vector2(0, 1)
         
-      # 判斷是否按下鍵盤鍵
-      if event.type == pygame.KEYDOWN:
-        
-        # 蛇移動方向改變(上下左右)
-        if event.key == pygame.K_UP:
-          if main_game.snake.direction.y != 1:
-            main_game.snake.direction = Vector2(0, -1)
-        
-        if event.key == pygame.K_RIGHT:
-          if main_game.snake.direction.x != -1:
-            main_game.snake.direction = Vector2(1, 0)
-          
-        if event.key == pygame.K_DOWN:
-          if main_game.snake.direction.y != -1:
-            main_game.snake.direction = Vector2(0, 1)
-          
-        if event.key == pygame.K_LEFT:
-          if main_game.snake.direction.x != 1:
-            main_game.snake.direction = Vector2(-1, 0)
+      if event.key == pygame.K_LEFT:
+        if main_game.snake.direction.x != 1:
+          main_game.snake.direction = Vector2(-1, 0)
             
   # 畫面顯示顏色
   screen.fill((175, 215, 70))
